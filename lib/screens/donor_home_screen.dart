@@ -192,7 +192,7 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> with SingleTickerProv
                                               id: orphanage['id'],
                                               name: orphanage['name'],
                                               location: orphanage['location'] ?? '',
-                                              rating: orphanage['rating']?.toDouble() ?? 0.0,
+                                              rating: (orphanage['rating'] as num?)?.toDouble() ?? 0.0,
                                               needs: List<String>.from(orphanage['needs'] ?? []),
                                               description: orphanage['description'] ?? '',
                                               imageUrl: orphanage['image_url'] ?? '',
@@ -215,23 +215,27 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> with SingleTickerProv
                                                   child: SizedBox(
                                                     width: 80,
                                                     height: 80,
-                                                    child: Image.network(
-                                                      orphanage['image_url'] ??
-                                                          'https://via.placeholder.com/150',
-                                                      fit: BoxFit.cover,
-                                                      loadingBuilder: (context, child, loadingProgress) {
-                                                        if (loadingProgress == null) return child;
-                                                        return const Center(
-                                                            child: CircularProgressIndicator());
-                                                      },
-                                                      errorBuilder: (context, error, stackTrace) {
-                                                        return Container(
-                                                          color: Colors.grey[200],
-                                                          child: const Center(
-                                                              child: Icon(Icons.error, color: Colors.red)),
-                                                        );
-                                                      },
-                                                    ),
+                                                    child: orphanage['image_url'] != null &&
+                                                            orphanage['image_url'].isNotEmpty
+                                                        ? Image.network(
+                                                            orphanage['image_url'],
+                                                            fit: BoxFit.cover,
+                                                            loadingBuilder: (context, child, loadingProgress) {
+                                                              if (loadingProgress == null) return child;
+                                                              return const Center(
+                                                                  child: CircularProgressIndicator());
+                                                            },
+                                                            errorBuilder: (context, error, stackTrace) {
+                                                              return Image.asset(
+                                                                'assets/default.webp',
+                                                                fit: BoxFit.cover,
+                                                              );
+                                                            },
+                                                          )
+                                                        : Image.asset(
+                                                            'assets/default.webp',
+                                                            fit: BoxFit.cover,
+                                                          ),
                                                   ),
                                                 ),
                                               ),

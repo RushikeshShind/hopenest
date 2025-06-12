@@ -88,16 +88,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           SnackBar(content: Text(errorMessage!)),
         );
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          errorMessage = 'Error: $e';
-          isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage!)),
-        );
-      }
     } finally {
       if (mounted) {
         setState(() {
@@ -126,14 +116,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       ),
                 ),
                 const SizedBox(height: 20),
-                Image.network(
-                  'https://via.placeholder.com/150',
+                Image.asset(
+                  'assets/default.webp',
                   height: 150,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
-                    Icons.error,
-                    size: 150,
-                    color: Colors.red,
-                  ),
                 ),
                 const SizedBox(height: 20),
                 if (errorMessage != null)
@@ -190,7 +175,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     ),
                     TextButton(
                       onPressed: () {
-                        // TODO: Implement forgot password functionality
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Forgot Password feature coming soon!')),
                         );
