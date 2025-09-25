@@ -1,5 +1,7 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
-import '../utils/constants.dart';
+import 'package:flutter/services.dart';
 import 'donor_home_screen.dart';
 import 'donor_donation_history_screen.dart';
 import 'feedback_screen.dart';
@@ -13,13 +15,27 @@ class MainScreen extends StatefulWidget {
   _MainScreenState createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   int _selectedIndex = 0;
   late List<Widget> _screens;
+  late PageController _pageController;
+  late AnimationController _navAnimationController;
+  late Animation<double> _navAnimation;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
+    _navAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _navAnimation = CurvedAnimation(
+      parent: _navAnimationController,
+      curve: Curves.easeInOut,
+    );
+    _navAnimationController.forward();
+    
     _screens = [
       DonorHomeScreen(userId: widget.userId),
       DonationHistoryScreen(userId: widget.userId),
@@ -28,36 +44,103 @@ class _MainScreenState extends State<MainScreen> {
     ];
   }
 
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _navAnimationController.dispose();
+    super.dispose();
+  }
+
   void _onItemTapped(int index) {
+    HapticFeedback.lightImpact();
     setState(() {
       _selectedIndex = index;
     });
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOutCubic,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 500),
-        transitionBuilder: (Widget child, Animation<double> animation) {
-          final offsetAnimation = Tween<Offset>(
-            begin: const Offset(1.0, 0.0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeInOut));
-          return SlideTransition(position: offsetAnimation, child: child);
-        },
-        child: _screens[_selectedIndex],
+      extendBody: true,
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
+        children: _screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Donations'),
-          BottomNavigationBarItem(icon: Icon(Icons.feedback), label: 'Feedback'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
+      bottomNavigationBar: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 1),
+          end: Offset.zero,
+        ).animate(_navAnimation),
+        child: Container(
+          margin: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(25),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDarkMode 
+                  ? Colors.grey[900]?.withOpacity(0.9)
+                  : Colors.white.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: BottomNavigationBar(
+                  type: BottomNavigationBarType.fixed,
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  currentIndex: _selectedIndex,
+                  onTap: _onItemTapped,
+                  selectedItemColor: const Color(0xFF6C5CE7),
+                  unselectedItemColor: Colors.grey.shade500,
+                  selectedFontSize: 12,
+                  unselectedFontSize: 11,
+                  items: [
+                    _buildNavItem(Icons.home_rounded, 'Home', 0),
+                    _buildNavItem(Icons.history_rounded, 'History', 1),
+                    _buildNavItem(Icons.feedback_rounded, 'Feedback', 2),
+                    _buildNavItem(Icons.person_rounded, 'Profile', 3),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
+    );
+  }
+
+  BottomNavigationBarItem _buildNavItem(IconData icon, String label, int index) {
+    return BottomNavigationBarItem(
+      icon: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.all(_selectedIndex == index ? 8 : 4),
+        decoration: BoxDecoration(
+          color: _selectedIndex == index 
+            ? const Color(0xFF6C5CE7).withOpacity(0.2)
+            : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, size: 24),
+      ),
+      label: label,
     );
   }
 }
